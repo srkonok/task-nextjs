@@ -1,14 +1,24 @@
-import Prompt from "@models/prompt";
-import { connectToDB } from "@utils/database";
-
 export const GET = async (request) => {
     try {
-        await connectToDB()
-
-        const prompts = await Prompt.find({}).populate('creator')
-
-        return new Response(JSON.stringify(prompts), { status: 200 })
+      const response = await fetch('https://dummyjson.com/posts');
+  
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+  
+      const result = await response.json();
+      
+      if (result && result.posts && Array.isArray(result.posts)) {
+        const mappedData = result.posts.map(item => {
+          return item; 
+        });
+  
+        return new Response(JSON.stringify(mappedData), { status: 200 });
+      } else {
+        return new Response("Data structure is not as expected", { status: 500 });
+      }
     } catch (error) {
-        return new Response("Failed to fetch all prompts", { status: 500 })
+      return new Response("Failed to fetch data", { status: 500 });
     }
-} 
+  }
+  

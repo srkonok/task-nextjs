@@ -19,7 +19,22 @@ const Form = ({ type, post, setPost, submitting, handleSubmit }) => {
           <span className='font-satoshi font-semibold text-base text-gray-700'>
             Your AI Prompt
           </span>
-
+          <label>
+          {/* <span className='font-satoshi font-semibold text-base text-gray-700'>
+            Field of Prompt{" "}
+            <span className='font-normal'>
+              (#product, #webdevelopment, #idea, etc.)
+            </span>
+          </span> */}
+          <input
+            value={post.title}
+            onChange={(e) => setPost({ ...post, title: e.target.value })}
+            type='text'
+            placeholder='Tittle'
+            required
+            className='form_input'
+          />
+        </label>
           <textarea
             value={post.prompt}
             onChange={(e) => setPost({ ...post, prompt: e.target.value })}

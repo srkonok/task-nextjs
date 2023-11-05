@@ -1,49 +1,55 @@
 "use client";
-
 import { useState, useEffect } from "react";
-
 import PromptCard from "./PromptCard";
+import Preloader from "./Preloader";
 
 const PromptCardList = ({ data, handleTagClick }) => {
   return (
     <div className='mt-16 prompt_layout'>
       {data.map((post) => (
-        <PromptCard
-          key={post._id}
-          post={post}
-          handleTagClick={handleTagClick}
-        />
+        <PromptCard key={post.id} post={post} handleTagClick={handleTagClick} />
       ))}
     </div>
   );
 };
 
 const Feed = () => {
+  const [dataCount,setDataCount]=useState([]);
   const [allPosts, setAllPosts] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10); // Number of items to display per page
+  const [isLoading, setIsLoading] = useState(true); // Add a loading state
+
 
   // Search states
   const [searchText, setSearchText] = useState("");
   const [searchTimeout, setSearchTimeout] = useState(null);
   const [searchedResults, setSearchedResults] = useState([]);
 
+  useEffect(() => {
+    
+    fetchPosts(currentPage);
+    
+  }, [currentPage]);
+
   const fetchPosts = async () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
     const response = await fetch("/api/prompt");
     const data = await response.json();
-
-    setAllPosts(data);
+    const paginatedData = data.slice(startIndex, endIndex);
+    setDataCount(data);
+    setAllPosts(paginatedData);
+    setIsLoading(false);
   };
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
   const filterPrompts = (searchtext) => {
-    const regex = new RegExp(searchtext, "i"); // 'i' flag for case-insensitive search
+    const regex = new RegExp(searchtext, "i");
     return allPosts.filter(
       (item) =>
-        regex.test(item.creator.username) ||
-        regex.test(item.tag) ||
-        regex.test(item.prompt)
+        regex.test(item.title) ||
+        regex.test(item.tags) ||
+        regex.test(item.body)
     );
   };
 
@@ -51,7 +57,6 @@ const Feed = () => {
     clearTimeout(searchTimeout);
     setSearchText(e.target.value);
 
-    // debounce method
     setSearchTimeout(
       setTimeout(() => {
         const searchResult = filterPrompts(e.target.value);
@@ -65,6 +70,13 @@ const Feed = () => {
 
     const searchResult = filterPrompts(tagName);
     setSearchedResults(searchResult);
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= Math.ceil(dataCount.length / itemsPerPage)) {
+      setCurrentPage(newPage);
+      fetchPosts(newPage); // Fetch data for the new page
+    }
   };
 
   return (
@@ -81,14 +93,35 @@ const Feed = () => {
       </form>
 
       {/* All Prompts */}
-      {searchText ? (
+        {/* Conditionally render the preloader while loading data */}
+      {isLoading ? (
+        <Preloader />
+      ) : (
+        // Render the data when loading is complete
         <PromptCardList
-          data={searchedResults}
+          data={searchText ? searchedResults : allPosts}
           handleTagClick={handleTagClick}
         />
-      ) : (
-        <PromptCardList data={allPosts} handleTagClick={handleTagClick} />
       )}
+
+      {/* Pagination Controls */}
+      <div className='pagination-controls'>
+      <button
+        onClick={() => handlePageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+      >
+        Previous
+      </button>
+      <span className='flex flex-col px-5'>{currentPage}</span>
+      <button 
+        onClick={() => handlePageChange(currentPage + 1)}
+        disabled={currentPage >= Math.ceil(dataCount.length / itemsPerPage)}
+        >
+        Next
+      </button>
+
+
+    </div>
     </section>
   );
 };
